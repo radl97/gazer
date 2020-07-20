@@ -108,6 +108,11 @@ namespace
         cl::init(""),
         cl::cat(TraceCategory)
     );
+    cl::opt<bool> GenerateWitness(
+        "violation-witness",
+        cl::desc("Generate an SVComp violation witness file"),
+        cl::cat(TraceCategory)
+    );
 } // end anonymous namespace
 
 bool LLVMFrontendSettings::validate(const llvm::Module& module, llvm::raw_ostream& os) const
@@ -159,6 +164,7 @@ LLVMFrontendSettings LLVMFrontendSettings::initFromCommandLine()
     settings.debugDumpMemorySSA = DebugDumpMemorySSA;
 
     settings.trace = PrintTrace;
+    settings.violationWitness = GenerateWitness;
     settings.testHarnessFile = TestHarnessFile;
 
     return settings;

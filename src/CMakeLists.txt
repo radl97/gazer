@@ -4,6 +4,7 @@ add_subdirectory(LLVM)
 add_subdirectory(Trace)
 add_subdirectory(Verifier)
 add_subdirectory(Support)
+add_subdirectory(Witness)
 
 # Add requested solvers
 if ("z3" IN_LIST GAZER_ENABLE_SOLVERS)

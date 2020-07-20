@@ -26,6 +26,7 @@
 #include "gazer/LLVM/Trace/TestHarnessGenerator.h"
 #include "gazer/LLVM/Transform/BackwardSlicer.h"
 #include "gazer/Support/Warnings.h"
+#include "gazer/Witness/Witness.h"
 
 #include <llvm/Analysis/ScopedNoAliasAA.h>
 #include <llvm/Analysis/TypeBasedAliasAnalysis.h>
@@ -224,6 +225,10 @@ bool RunVerificationBackendPass::runOnModule(llvm::Module& module)
                 } else {
                     llvm::outs() << "Error trace is unavailable.\n";
                 }
+            }
+
+            if (mSettings.violationWitness) {
+                Witness::generateWitnessFile();
             }
 
             if (!mSettings.testHarnessFile.empty() && fail->hasTrace()) {

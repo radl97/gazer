@@ -85,6 +85,7 @@ public:
 public:
     // Traceability
     bool trace = false;
+    bool violationWitness = false;
     std::string testHarnessFile;
 
     // LLVM transformations
