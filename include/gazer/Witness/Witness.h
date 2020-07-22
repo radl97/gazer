@@ -19,53 +19,48 @@
 #define GAZER_WITNESS_WITNESS_H
 
 #include <string>
+#include <map>
+#include <memory>
 
 class Witness {
+private:
+    class WitnessNode {
+        const bool entry, sink, violation; // only one entry allowed in a witness automaton!
+        const int id;
+
+    public:
+        WitnessNode(int _id, bool _entry = false, bool _sink = false, bool _violation = false)
+            : id(_id), entry(_entry), sink(_sink), violation(_violation) {}
+
+        std::string toString() const;
+    };
+
+    class WitnessEdge {
+        const int from_id, to_id; // "naiv" megoldás (& could be better - we'll see)
+        const int id, startline, endline;
+        // std::string sourcecode; // ez, vagy enter/return from function, vagy mivel?
+
+    public:
+        WitnessEdge(int _id, unsigned int _from_id, unsigned int _to_id, unsigned int _startline, unsigned int _endline)
+            : id(_id), from_id(_from_id), to_id(_to_id),
+            startline(_startline), endline(_endline) {}
+        
+        std::string toString() const;
+    };
+
 public:
-    static void generateWitnessFile();
+    void generateWitnessFile() const;
+    void createEntryNode(int _id, bool _sink, bool _violation);
+    void createNode(int _id, bool _sink, bool _violation);
+    void createEdge(int _id, unsigned int _from, unsigned int _to, unsigned int _startline, unsigned int _endline);
 
 private:
+    bool entryNodeExists = false;
     static const std::string keys;
     static const std::string graph_data;
+    
+    std::map<unsigned int, WitnessNode> nodes{}; // TODO id-t érdemes a node/edge objectben is tárolni, ha itt a map?
+    std::map<unsigned int, WitnessEdge> edges{};
 };
-
-const std::string Witness::graph_data = R"(
-<graph edgedefault="directed">
-<data key="sourcecodelang">C</data>
-<data key="witness-type">violation_witness</data>
-<data key="producer">Theta v1.3.0</data>
-<data key="specification">CHECK( init(main()), LTL(G ! call(reach_error())) )</data>
-)";
-
-// <data key="programfile">minepump_spec1_product33_false-unreach-call_false-termination.cil.c</data>
-// <data key="programhash">4988ed1a51716095b984ef9f31c0416bd8aad186</data>
-// <data key="architecture">32bit</data>
-
-const std::string Witness::keys = R"(
-<?xml version="1.0" encoding="UTF-8"?>
-<graphml xmlns="http://graphml.graphdrawing.org/xmlns/graphml"
-xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
-xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns/graphml">
-<key id="sourcecodelang" attr.name="sourcecodelang" for="graph"/>
-<key id="witness-type" attr.name="witness-type" for="graph"/>
-<key id="entry" attr.name="entry" for="node">
-<default>false</default>
-</key>
-<key id="nodetype" attr.name="nodetype" for="node">
-<default>path</default>
-</key>
-<key id="violation" attr.name="violation" for="node">
-<default>false</default>
-</key>
-<key id="invariant" attr.name="invariant" for="node">
-<default>true</default>
-</key>
-<key id="endline" attr.name="endline" for="edge"/>
-<key id="enterFunction" attr.name="enterFunction" for="edge"/>
-<key id="startline" attr.name="startline" for="edge"/>
-<key id="returnFrom" attr.name="returnFrom" for="edge"/>
-<key id="assumption" attr.name="assumption" for="edge"/>
-<key id="control" attr.name="control" for="edge"/>
-)";
 
 #endif
