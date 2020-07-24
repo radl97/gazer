@@ -24,6 +24,7 @@
 
 class Witness {
 private:
+    // TODO maybe Gazer Graph could be used instead another implementation?
     class WitnessNode {
         const bool entry, sink, violation; // only one entry allowed in a witness automaton!
         const int id;

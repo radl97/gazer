@@ -105,6 +105,7 @@ auto LLVMTraceBuilder::build(
     std::vector<Location*>& states,
     std::vector<std::vector<VariableAssignment>>& actions) -> std::unique_ptr<Trace>
 {
+
     assert(states.size() == actions.size() + 1);
     assert(states.front() == states.front()->getAutomaton()->getEntry());
 

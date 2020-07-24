@@ -18,6 +18,7 @@
 #include "gazer/Witness/Witness.h"
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 void Witness::createEntryNode(int _id, bool _sink, bool _violation) {
     if(entryNodeExists) throw new std::logic_error("More than one entry node created");
