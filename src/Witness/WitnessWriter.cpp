@@ -16,6 +16,7 @@
 //
 //===----------------------------------------------------------------------===//
 #include "gazer/Witness/WitnessWriter.h"
+#include "gazer/Witness/sha256.h"
 
 #include <fstream>
 
@@ -29,8 +30,8 @@ void WitnessWriter::createNode() {
 }
 
 void WitnessWriter::openEdge() {
-    if(nodeID<1) throw std::logic_error("Can't create witness edge, there is only one node");
-    mOS << "<edge source=\"N" << nodeID-1 << "\" target=\"" << nodeID << "\">";
+    // if(nodeID<1) throw std::logic_error("Can't create witness edge, there is only one node");
+    mOS << "<edge source=\"N" << nodeID-1 << "\" target=\"N" << nodeID << "\">";
 }
 
 void WitnessWriter::closeEdge() {
@@ -51,7 +52,12 @@ void WitnessWriter::writeLocation(gazer::LocationInfo location) {
 void WitnessWriter::write(Trace& trace) {
     nodeID = 0;
     createNode();
-    mOS << keys << graph_data; // hash!!
+    mOS << keys << graph_data;
+    auto location = (*trace.begin())->getLocation(); // ezt szebben?
+    mOS << "<data key=\"programfile\">" << location.getFileName() << "</data>\n";
+
+    // mOS << "<data key=\"programhash\">" <<  << "</data\n>";
+    
     for (auto& event : trace) {
         event->accept(*this);
     }
@@ -62,28 +68,29 @@ void WitnessWriter::visit(AssignTraceEvent& event) { // practically a new node a
     ExprRef<AtomicExpr> expr = event.getExpr();
     createNode(); // <node id="N[ID]"> (and entry, if first node) </node>
     openEdge(); // <edge source="Nlast" taerget="Nnext">
+    writeLocation(event.getLocation());
     // TODO egyelőre mindig előbb kell nyitni nodeot és utána edget az egyszerű ID számolás miatt, de ezt lehetne fejleszteni
     // TODO helper functions: add assumption, add data, something like that?
     mOS << "<data key=\"assumption\">" << event.getVariable().getName() << "==";
     expr->print(mOS);
     mOS << ";</data>\n";
-
-    writeLocation(event.getLocation());
     closeEdge(); // </edge>
 }
 
-// Megj. (Zsófi) amúgy ilyen eventre még nem láttam példát a kimenetben
+// Megj. amúgy ilyen eventre még nem láttam példát a kimenetben
 void WitnessWriter::visit(FunctionEntryEvent& event) { // practically a new node and edge
     createNode();
     openEdge();
+    writeLocation(event.getLocation());
     mOS << "<data key=\"enterFunction\">" << event.getFunctionName() << "</data>\n";
     closeEdge();
 }
 
-// Megj. (Zsófi) amúgy ilyen eventre még nem láttam példát a kimenetben
+// Megj. amúgy ilyen eventre még nem láttam példát a kimenetben
 void WitnessWriter::visit(FunctionReturnEvent& event) { // practically a new node and edge
     createNode();
     openEdge();
+    writeLocation(event.getLocation());
     mOS << "<data key=\"returnFromFunction\">" << event.getFunctionName() << "</data>\n";
     closeEdge();
 }
@@ -91,11 +98,16 @@ void WitnessWriter::visit(FunctionReturnEvent& event) { // practically a new nod
 void WitnessWriter::visit(FunctionCallEvent& event) { // assumption from result function
     createNode();
     openEdge();
-    
+    writeLocation(event.getLocation());
+    mOS << "<data key=\"assumption\">\\result==";
+    event.getReturnValue()->print(mOS);
+    mOS << ";</data>\n";
+    mOS << "<data key=\"assumption.resultfunction\">" << event.getFunctionName() << "</data>\n";
     closeEdge();
 }
 
 void WitnessWriter::visit(UndefinedBehaviorEvent& event) { // dunno yet what to do in graphml wit this
+    writeLocation(event.getLocation());
     mOS << "UndefBehaviorEvent visit\n";
 }
 
@@ -107,11 +119,8 @@ const std::string WitnessWriter::graph_data = R"(
 <data key="witness-type">violation_witness</data>
 <data key="producer">Theta v1.3.0</data>
 <data key="specification">CHECK( init(main()), LTL(G ! call(reach_error())) )</data>
+<data key="architecture">32bit</data>
 )";
-
-// <data key="programfile">minepump_spec1_product33_false-unreach-call_false-termination.cil.c</data>
-// <data key="programhash">4988ed1a51716095b984ef9f31c0416bd8aad186</data>
-// <data key="architecture">32bit</data>
 
 const std::string WitnessWriter::keys = R"(
 <?xml version="1.0" encoding="UTF-8"?>
@@ -139,6 +148,6 @@ xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns/graphml">
 )";
 
 const std::string WitnessWriter::closing_brackets = R"(
-    </graph>
-    </graphml>
+</graph>
+</graphml>
 )";
