@@ -230,7 +230,8 @@ bool RunVerificationBackendPass::runOnModule(llvm::Module& module)
             if (mSettings.violationWitness) {
                 if (fail->hasTrace()) {
                     WitnessWriter ww{llvm::outs()};
-                    ww.write(fail->getTrace());
+                    
+                    ww.generateWitness(fail->getTrace(), mChecks.getDebugLoc(ec));
                 } else {
                     llvm::outs() << "Error witness is unavailable.\n";
                 }

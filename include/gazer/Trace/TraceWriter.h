@@ -31,7 +31,7 @@ public:
         : mOS(os)
     {}
 
-    virtual void write(Trace& trace) {
+    void write(Trace& trace) {
         for (auto& event : trace) {
             event->accept(*this);
         }

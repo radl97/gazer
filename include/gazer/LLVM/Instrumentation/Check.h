@@ -125,6 +125,11 @@ public:
 
     std::string messageForCode(unsigned ec) const;
 
+    // temporary! (or should be)
+    llvm::DebugLoc getDebugLoc(unsigned ec) const {
+        return mCheckMap.find(ec)->second.getDebugLoc();
+    }
+
     ~CheckRegistry();
 private:
     llvm::LLVMContext& mLlvmContext;

@@ -15,74 +15,83 @@
 // limitations under the License.
 //
 //===----------------------------------------------------------------------===//
+
+#include "gazer/Core/LiteralExpr.h"
 #include "gazer/Witness/WitnessWriter.h"
-#include "gazer/Witness/sha256.h"
 
 #include <fstream>
 
 using namespace gazer;
 
 void WitnessWriter::createNode() {
-    mOS << "<node id=\"N" << nodeID << "\">\n";
-    if(nodeID==0) mOS << "<data key=\"entry\">true</data>\n";
+    mOS << "\n<node id=\"N" << nodeID << "\">\n";
+    if(nodeID==0) mOS << "\t<data key=\"entry\">true</data>\n";
+    mOS << "</node>\n";
+    nodeID++;
+}
+
+void WitnessWriter::createViolationNode() {
+    mOS << "\n<node id=\"N" << nodeID << "\">\n";
+    mOS << "\t<data key=\"violation\">true</data>\n";
     mOS << "</node>\n";
     nodeID++;
 }
 
 void WitnessWriter::openEdge() {
-    // if(nodeID<1) throw std::logic_error("Can't create witness edge, there is only one node");
-    mOS << "<edge source=\"N" << nodeID-1 << "\" target=\"N" << nodeID << "\">";
+    assert(nodeID>0 && "Can't create witness edge, there is only one node");
+    mOS << "\n<edge source=\"N" << nodeID-2 << "\" target=\"N" << nodeID-1 << "\">\n";
 }
 
 void WitnessWriter::closeEdge() {
     mOS << "</edge>\n";
 }
 
-void WitnessWriter::writeLocation(gazer::LocationInfo location) {
+void WitnessWriter::writeEdgeLocation(gazer::LocationInfo location) {
     if (location.getLine() != 0) {
-        mOS << "<data key=\"startline\">" 
+        mOS << "\t<data key=\"startline\">" 
             << location.getLine()
             << "</data>\n"
-            << "<data key=\"startoffset\">"
+            << "\t<data key=\"startoffset\">"
             << location.getColumn()
             << "</data>\n";
     }
 }
 
-void WitnessWriter::write(Trace& trace) {
+void WitnessWriter::generateWitness(Trace& trace, llvm::DebugLoc failLocation) {
     nodeID = 0;
-    createNode();
     mOS << keys << graph_data;
-    auto location = (*trace.begin())->getLocation(); // ezt szebben?
-    mOS << "<data key=\"programfile\">" << location.getFileName() << "</data>\n";
+    mOS << "<data key=\"programfile\">" << failLocation->getFilename() << "</data>\n";
 
-    // mOS << "<data key=\"programhash\">" <<  << "</data\n>";
-    
-    for (auto& event : trace) {
-        event->accept(*this);
-    }
+    createNode();
+    write(trace);
+    // creating violation node
+    createViolationNode();
+    openEdge();
+    closeEdge();
     mOS << closing_brackets;
 }
 
 void WitnessWriter::visit(AssignTraceEvent& event) { // practically a new node and edge
     ExprRef<AtomicExpr> expr = event.getExpr();
-    createNode(); // <node id="N[ID]"> (and entry, if first node) </node>
-    openEdge(); // <edge source="Nlast" taerget="Nnext">
-    writeLocation(event.getLocation());
-    // TODO egyelőre mindig előbb kell nyitni nodeot és utána edget az egyszerű ID számolás miatt, de ezt lehetne fejleszteni
-    // TODO helper functions: add assumption, add data, something like that?
-    mOS << "<data key=\"assumption\">" << event.getVariable().getName() << "==";
-    expr->print(mOS);
-    mOS << ";</data>\n";
-    closeEdge(); // </edge>
+    if (!llvm::dyn_cast<BvLiteralExpr>(expr)) {
+        createNode(); // <node id="N[ID]"> (and entry, if first node) </node>
+        openEdge(); // <edge source="Nlast" taerget="Nnext">
+        writeEdgeLocation(event.getLocation());
+        // TODO egyelőre mindig előbb kell nyitni nodeot és utána edget az egyszerű ID számolás miatt, de ezt lehetne fejleszteni
+        // TODO helper functions: add assumption, add data, something like that?
+        mOS << "\t<data key=\"assumption\">" << event.getVariable().getName() << "==";
+        expr->print(mOS);
+        mOS << ";</data>\n";
+        closeEdge(); // </edge>
+    }
 }
 
 // Megj. amúgy ilyen eventre még nem láttam példát a kimenetben
 void WitnessWriter::visit(FunctionEntryEvent& event) { // practically a new node and edge
     createNode();
     openEdge();
-    writeLocation(event.getLocation());
-    mOS << "<data key=\"enterFunction\">" << event.getFunctionName() << "</data>\n";
+    writeEdgeLocation(event.getLocation());
+    mOS << "\t<data key=\"enterFunction\">" << event.getFunctionName() << "</data>\n";
     closeEdge();
 }
 
@@ -90,24 +99,24 @@ void WitnessWriter::visit(FunctionEntryEvent& event) { // practically a new node
 void WitnessWriter::visit(FunctionReturnEvent& event) { // practically a new node and edge
     createNode();
     openEdge();
-    writeLocation(event.getLocation());
-    mOS << "<data key=\"returnFromFunction\">" << event.getFunctionName() << "</data>\n";
+    writeEdgeLocation(event.getLocation());
+    mOS << "\t<data key=\"returnFromFunction\">" << event.getFunctionName() << "</data>\n";
     closeEdge();
 }
 
 void WitnessWriter::visit(FunctionCallEvent& event) { // assumption from result function
     createNode();
     openEdge();
-    writeLocation(event.getLocation());
-    mOS << "<data key=\"assumption\">\\result==";
+    writeEdgeLocation(event.getLocation());
+    mOS << "\t<data key=\"assumption\">\\result==";
     event.getReturnValue()->print(mOS);
     mOS << ";</data>\n";
-    mOS << "<data key=\"assumption.resultfunction\">" << event.getFunctionName() << "</data>\n";
+    mOS << "\t<data key=\"assumption.resultfunction\">" << event.getFunctionName() << "</data>\n";
     closeEdge();
 }
 
 void WitnessWriter::visit(UndefinedBehaviorEvent& event) { // dunno yet what to do in graphml wit this
-    writeLocation(event.getLocation());
+    writeEdgeLocation(event.getLocation());
     mOS << "UndefBehaviorEvent visit\n";
 }
 

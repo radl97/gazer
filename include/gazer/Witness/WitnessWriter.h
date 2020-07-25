@@ -18,19 +18,22 @@
 #ifndef GAZER_WITNESS_WITNESS_H
 #define GAZER_WITNESS_WITNESS_H
 
+#include <string>
+#include <memory>
+
 #include "gazer/Trace/TraceWriter.h"
 #include "gazer/Trace/Trace.h"
 
-#include <string>
-#include <memory>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/IR/DebugLoc.h>
+#include <llvm/IR/DebugInfoMetadata.h>
 
 using namespace gazer;
 
 class WitnessWriter : TraceWriter {
 public:
     explicit WitnessWriter(llvm::raw_ostream& os) : TraceWriter(os) {}
-    void write(Trace& trace) override;
+    void generateWitness(Trace& trace, llvm::DebugLoc failLocation);
 
 private:
     void visit(AssignTraceEvent& event) override;
@@ -45,11 +48,12 @@ private:
     static const std::string closing_brackets;
 
     void createNode();
-
+    void createViolationNode();
+    
     void openEdge();
     void closeEdge();
 
-    void writeLocation(gazer::LocationInfo location);
+    void writeEdgeLocation(gazer::LocationInfo location);
 };
 
 #endif
