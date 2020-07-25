@@ -18,50 +18,38 @@
 #ifndef GAZER_WITNESS_WITNESS_H
 #define GAZER_WITNESS_WITNESS_H
 
+#include "gazer/Trace/TraceWriter.h"
+#include "gazer/Trace/Trace.h"
+
 #include <string>
-#include <map>
 #include <memory>
+#include <llvm/Support/raw_ostream.h>
 
-class Witness {
-private:
-    // TODO maybe Gazer Graph could be used instead another implementation?
-    class WitnessNode {
-        const bool entry, sink, violation; // only one entry allowed in a witness automaton!
-        const int id;
+using namespace gazer;
 
-    public:
-        WitnessNode(int _id, bool _entry = false, bool _sink = false, bool _violation = false)
-            : id(_id), entry(_entry), sink(_sink), violation(_violation) {}
-
-        std::string toString() const;
-    };
-
-    class WitnessEdge {
-        const int from_id, to_id; // "naiv" megoldás (& could be better - we'll see)
-        const int id, startline, endline;
-        // std::string sourcecode; // ez, vagy enter/return from function, vagy mivel?
-
-    public:
-        WitnessEdge(int _id, unsigned int _from_id, unsigned int _to_id, unsigned int _startline, unsigned int _endline)
-            : id(_id), from_id(_from_id), to_id(_to_id),
-            startline(_startline), endline(_endline) {}
-        
-        std::string toString() const;
-    };
-
+class WitnessWriter : TraceWriter {
 public:
-    void generateWitnessFile() const;
-    void createEntryNode(int _id, bool _sink, bool _violation);
-    void createNode(int _id, bool _sink, bool _violation);
-    void createEdge(int _id, unsigned int _from, unsigned int _to, unsigned int _startline, unsigned int _endline);
+    explicit WitnessWriter(llvm::raw_ostream& os) : TraceWriter(os) {}
+    void write(Trace& trace) override;
 
 private:
-    bool entryNodeExists = false;
+    void visit(AssignTraceEvent& event) override;
+    void visit(FunctionEntryEvent& event) override;
+    void visit(FunctionReturnEvent& event) override;
+    void visit(FunctionCallEvent& event) override;
+    void visit(UndefinedBehaviorEvent& event) override;
+
+    unsigned int nodeID = 0;
     static const std::string keys;
     static const std::string graph_data;
-    
-    std::map<unsigned int, WitnessNode> nodes{}; // TODO id-t érdemes a node/edge objectben is tárolni, ha itt a map?
-    std::map<unsigned int, WitnessEdge> edges{};
+    static const std::string closing_brackets;
+
+    void createNode();
+
+    void openEdge();
+    void closeEdge();
+
+    void writeLocation(gazer::LocationInfo location);
 };
 
 #endif

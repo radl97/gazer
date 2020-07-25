@@ -139,7 +139,7 @@ LLVMFrontendSettings LLVMFrontendSettings::initFromCommandLine()
 
     // opt-out settings
     settings.inlineGlobals = !NoInlineGlobals;
-    settings.optimize = !NoOptimize;
+    settings.optimize = !NoOptimize && !GenerateWitness; // TODO (Zsófi) temporary solution - I need all values for the witness
     settings.liftAsserts = !NoAssertLift;
     settings.slicing =!NoSlice;
     settings.simplifyExpr = !NoSimplifyExpr;
@@ -163,7 +163,7 @@ LLVMFrontendSettings LLVMFrontendSettings::initFromCommandLine()
 
     settings.debugDumpMemorySSA = DebugDumpMemorySSA;
 
-    settings.trace = PrintTrace;
+    settings.trace = PrintTrace || GenerateWitness; // TODO (Zsófi) temporary solution - I need a trace for the witness
     settings.violationWitness = GenerateWitness;
     settings.testHarnessFile = TestHarnessFile;
 

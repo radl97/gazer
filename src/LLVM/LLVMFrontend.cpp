@@ -26,7 +26,7 @@
 #include "gazer/LLVM/Trace/TestHarnessGenerator.h"
 #include "gazer/LLVM/Transform/BackwardSlicer.h"
 #include "gazer/Support/Warnings.h"
-#include "gazer/Witness/Witness.h"
+#include "gazer/Witness/WitnessWriter.h"
 
 #include <llvm/Analysis/ScopedNoAliasAA.h>
 #include <llvm/Analysis/TypeBasedAliasAnalysis.h>
@@ -228,7 +228,14 @@ bool RunVerificationBackendPass::runOnModule(llvm::Module& module)
             }
 
             if (mSettings.violationWitness) {
-                Witness::generateWitnessFile();
+                if (fail->hasTrace()) {
+                    WitnessWriter ww{llvm::outs()};
+                    ww.write(fail->getTrace());
+                } else {
+                    llvm::outs() << "Error witness is unavailable.\n";
+                }
+                // TODO (Zsófi) hívni a witness generationt és megoldani, h mindenképen legyen hozzá trace
+                // Witness::generateWitnessFile();
             }
 
             if (!mSettings.testHarnessFile.empty() && fail->hasTrace()) {

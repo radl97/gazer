@@ -3,3 +3,4 @@ set(SOURCE_FILES
 )
 
 add_library(GazerWitness SHARED ${SOURCE_FILES})
+target_link_libraries(GazerTrace)
