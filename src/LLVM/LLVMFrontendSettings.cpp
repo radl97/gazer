@@ -163,7 +163,7 @@ LLVMFrontendSettings LLVMFrontendSettings::initFromCommandLine()
 
     settings.debugDumpMemorySSA = DebugDumpMemorySSA;
 
-    settings.trace = PrintTrace || GenerateWitness; // TODO (Zsófi) temporary solution - I need a trace for the witness
+    settings.trace = PrintTrace;
     settings.violationWitness = GenerateWitness;
     settings.testHarnessFile = TestHarnessFile;
 

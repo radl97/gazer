@@ -213,14 +213,14 @@ public:
     void addReverseBlockIfTraceEnabled(
         const llvm::BasicBlock* bb, Location* loc, CfaToLLVMTrace::LocationKind kind
     ) {
-        if (mSettings.trace) {
+        if (mSettings.trace || mSettings.violationWitness) {
             mTraceInfo.mLocationsToBlocks[loc] = { bb, kind };
         }
     }
 
     void addExprValueIfTraceEnabled(Cfa* cfa, ValueOrMemoryObject value, ExprPtr expr)
     {
-        if (mSettings.trace) {
+        if (mSettings.trace || mSettings.violationWitness) {
             mTraceInfo.mValueMaps[cfa].values[value] = std::move(expr);
         }
     }

@@ -229,14 +229,16 @@ bool RunVerificationBackendPass::runOnModule(llvm::Module& module)
 
             if (mSettings.violationWitness) {
                 if (fail->hasTrace()) {
-                    WitnessWriter ww{llvm::outs()};
+                    std::string filename = mChecks.getDebugLoc(ec)->getFilename().str() + ".gazer-theta-witness.graphml"; // puts the witness beside the source file
+                    std::error_code EC{};
+                    llvm::raw_fd_ostream fouts{ StringRef{filename}, EC };
+                    WitnessWriter ww{ fouts };
                     
                     ww.generateWitness(fail->getTrace(), mChecks.getDebugLoc(ec));
                 } else {
                     llvm::outs() << "Error witness is unavailable.\n";
                 }
-                // TODO (Zsófi) hívni a witness generationt és megoldani, h mindenképen legyen hozzá trace
-                // Witness::generateWitnessFile();
+                // TODO (Zsófi) megoldani, h mindenképen legyen trace, ha witness kell
             }
 
             if (!mSettings.testHarnessFile.empty() && fail->hasTrace()) {
