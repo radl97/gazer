@@ -51,8 +51,8 @@ void WitnessWriter::writeEdgeLocation(gazer::LocationInfo location) {
         mOS << "\t<data key=\"startline\">" 
             << location.getLine()
             << "</data>\n"
-            << "\t<data key=\"startoffset\">"
-            << location.getColumn()
+            << "\t<data key=\"endline\">" 
+            << location.getLine()
             << "</data>\n";
     }
 }
@@ -79,7 +79,7 @@ void WitnessWriter::visit(AssignTraceEvent& event) { // practically a new node a
         writeEdgeLocation(event.getLocation());
         // TODO egyelőre mindig előbb kell nyitni nodeot és utána edget az egyszerű ID számolás miatt, de ezt lehetne fejleszteni
         // TODO helper functions: add assumption, add data, something like that?
-        mOS << "\t<data key=\"assumption\">" << event.getVariable().getName() << "==";
+        mOS << "\t<data key=\"assumption\">" << event.getVariable().getName() << "== ";
         expr->print(mOS);
         mOS << ";</data>\n";
         closeEdge(); // </edge>
@@ -105,14 +105,19 @@ void WitnessWriter::visit(FunctionReturnEvent& event) { // practically a new nod
 }
 
 void WitnessWriter::visit(FunctionCallEvent& event) { // assumption from result function
-    createNode();
-    openEdge();
-    writeEdgeLocation(event.getLocation());
-    mOS << "\t<data key=\"assumption\">\\result==";
-    event.getReturnValue()->print(mOS);
-    mOS << ";</data>\n";
-    mOS << "\t<data key=\"assumption.resultfunction\">" << event.getFunctionName() << "</data>\n";
-    closeEdge();
+    /*
+    ExprRef<AtomicExpr> expr = event.getReturnValue();
+    if (!llvm::dyn_cast<BvLiteralExpr>(expr)) {
+        createNode();
+        openEdge();
+        writeEdgeLocation(event.getLocation());
+        mOS << "\t<data key=\"assumption\">\\result==";
+        expr->print(mOS);
+        mOS << ";</data>\n";
+        mOS << "\t<data key=\"assumption.resultfunction\">" << event.getFunctionName() << "</data>\n";
+        closeEdge();
+    }
+    */
 }
 
 void WitnessWriter::visit(UndefinedBehaviorEvent& event) { // dunno yet what to do in graphml wit this
@@ -122,8 +127,7 @@ void WitnessWriter::visit(UndefinedBehaviorEvent& event) { // dunno yet what to 
 
 // TODO remove this hardcoded part 
 
-const std::string WitnessWriter::graph_data = R"(
-<graph edgedefault="directed">
+const std::string WitnessWriter::graph_data = R"(<graph edgedefault="directed">
 <data key="sourcecodelang">C</data>
 <data key="witness-type">violation_witness</data>
 <data key="producer">Theta v1.3.0</data>
@@ -131,8 +135,7 @@ const std::string WitnessWriter::graph_data = R"(
 <data key="architecture">32bit</data>
 )";
 
-const std::string WitnessWriter::keys = R"(
-<?xml version="1.0" encoding="UTF-8"?>
+const std::string WitnessWriter::keys = R"(<?xml version="1.0" encoding="UTF-8"?>
 <graphml xmlns="http://graphml.graphdrawing.org/xmlns/graphml"
 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
 xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns/graphml">
